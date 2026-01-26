@@ -1,0 +1,38 @@
+---
+name: "Make Nightly AppImage Release"
+description: "Releases artifacts under the tag nightly"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Read version and get date
+      shell: sh
+      run: |
+        if [ ! -f ./appinfo ]; then
+          >&2 echo "ERROR: No ./appinfo file found!"
+          exit 1
+        fi
+        APPNAME=$(awk -F'=' '/X-AppImage-Name/{print $2; exit}' ./appinfo)
+        VERSION=$(awk -F'=' '/X-AppImage-Version/{print $2; exit}' ./appinfo)
+        if [ -z "$APPNAME" ]; then
+          >&2 echo "ERROR: ./appinfo is missing X-AppImage-Name"
+          exit 1
+        elif [ -z "$VERSION" ]; then
+          >&2 echo "ERROR: ./appinfo is missing X-AppImage-Version"
+          exit 1
+        fi
+        echo "APPNAME=$APPNAME" >> "${GITHUB_ENV}"
+        echo "VERSION=$VERSION" >> "${GITHUB_ENV}"
+        echo "DATE=$(date +'%Y-%m-%d_%s')" >> "${GITHUB_ENV}"
+
+    - name: Release Artifacts
+      uses: softprops/action-gh-release@5be0e66d93ac7ed76da52eca8bb058f665c3a5fe # v2.4.2
+      with:
+        name: "Nightly Build (${{ env.DATE }})"
+        tag_name: "nightly"
+        prerelease: true
+        draft: false
+        generate_release_notes: false
+        make_latest: false
+        files: |
+          *.AppImage*
