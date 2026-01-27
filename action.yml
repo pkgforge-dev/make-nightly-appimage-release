@@ -2,6 +2,11 @@
 name: "Make Nightly AppImage Release"
 description: "Releases artifacts under the tag nightly"
 
+inputs:
+  github_token:
+    description: 'We need GITHUB_TOKEN to be able to delete the previous nightly release'
+    required: true
+
 runs:
   using: "composite"
   steps:
@@ -24,6 +29,13 @@ runs:
         echo "APPNAME=$APPNAME" >> "${GITHUB_ENV}"
         echo "VERSION=$VERSION" >> "${GITHUB_ENV}"
         echo "DATE=$(date +'%Y-%m-%d_%s')" >> "${GITHUB_ENV}"
+
+    - name: Delete previous nightly release
+      shell: sh
+      continue-on-error: true
+      run: gh release delete "nightly" --repo "${GITHUB_REPOSITORY}" --cleanup-tag -y && sleep 5
+      env:
+        GH_TOKEN: "${{ inputs.github_token }}"
 
     - name: Release Artifacts
       uses: softprops/action-gh-release@5be0e66d93ac7ed76da52eca8bb058f665c3a5fe # v2.4.2
